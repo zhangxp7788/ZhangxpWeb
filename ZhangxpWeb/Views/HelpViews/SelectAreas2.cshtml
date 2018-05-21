@@ -1,0 +1,102 @@
+﻿@*<label class="layui-form-label">请选择区域</label>*@
+<div class="layui-input-inline">
+    <select name="province" id="selectProvince"  onchange="changeprovince(this)">
+        <option value="" selected>请选择</option>
+    </select>
+</div>
+<div class="layui-input-inline">
+    <select name="city" id="selectCity"  onchange="changecity(this)">
+        <option value="">请选择</option>
+    </select>
+</div>
+<div class="layui-input-inline">
+    <select name="district" id="selectDistrict">
+        <option value="">请选择</option>
+    </select>
+</div>
+
+
+<script src="~/Scripts/jquery-1.10.2.min.js"></script>
+<script type="text/javascript">
+    var AreaSelect = {
+        //参数
+        Parameter: { dProvince: 0, dCity: 0, dDistrict: 0 },
+        //初始化
+        Init: function () {
+            getProvince();
+            //初始化值
+            if (this.Parameter.dProvince != 0 || this.Parameter.dCity != 0 || this.Parameter.dDistrict != 0) {
+                initPara();
+            }
+        }
+    }
+
+    var AreaEnum = {
+        key: "Country",
+        child: {
+            key: "Province",
+            child: {
+                key: "City",
+                child: {
+                    key: "District",
+                    child: null
+                }
+            }
+        }
+    }
+    //根据参数给区域赋值
+    function initPara() {
+        $("#selectProvince").val(AreaSelect.Parameter.dProvince);   //省
+        getChirdArea(AreaSelect.Parameter.dProvince, AreaEnum.child.child);
+
+        $("#selectCity").val(AreaSelect.Parameter.dCity); //市
+        getChirdArea(AreaSelect.Parameter.dCity, AreaEnum.child.child.child);
+
+        $("#selectDistrict").val(AreaSelect.Parameter.dDistrict);//区
+        getChirdArea(AreaSelect.Parameter.dDistrict, AreaEnum.child.child.child.child);
+    }
+
+    //绑定事件(layui框架，所以要绑定一下layui框架里的选中事件)
+    function changeprovince(obj) {
+        var myid = $(obj).val();
+        getChirdArea(myid, AreaEnum.child.child);        
+    }
+
+    function changecity(obj) {
+        var myid = $(obj).val();
+        getChirdArea(myid, AreaEnum.child.child.child);
+    }
+    
+    //获取省份
+    function getProvince() {
+        getChirdArea(0, AreaEnum.child);
+    }
+
+    //获取下级区域
+    function getChirdArea(pid, enumobj) {
+        if (enumobj == null || pid == null) return;
+        var ajaxUrl = '@Url.Action("GetChirdCity", "CommonAjax")';
+        $.ajax({
+            url: ajaxUrl,
+            data: { pid: pid },
+            async: false,
+            dataType: "json",
+            type: "post",
+            success: function (data) {
+                var options = [];
+                var list = data;
+                $.each(list, function (i, item) {
+                    options.push('<option value="' + item.Id + '">' + item.Name + '</option>');
+                });
+
+                $("#select" + enumobj.key).html(options.length > 0 ? options : "<option></option>");
+                if (data.length == 0) return;
+                getChirdArea(data[0].Id, enumobj.child);
+
+            }
+        });
+    }
+
+</script>
+
+
